@@ -61,10 +61,8 @@ jobs:
       - name: Run scorer
         run: node scorer.js
 
-      - name: Commit updated CSV results
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add *.csv
-          git commit -m "Monthly content audit update" || echo "No changes to commit"
-          git push
+      - name: Upload CSVs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-audit
+          path: "*.csv"
