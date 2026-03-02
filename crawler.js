@@ -3,8 +3,20 @@ const cheerio = require('cheerio');
 const { createObjectCsvWriter } = require('csv-writer');
 const { URL } = require('url');
 
-const START_URL = 'https://clearviewlibrary.org';
-const MAX_PAGES = 500;
+const minimist = require('minimist');
+
+const args = minimist(process.argv.slice(2));
+
+const START_URL = args.url || process.env.START_URL;
+
+if (!START_URL) {
+  console.error('❌ No start URL provided.');
+  process.exit(1);
+}
+
+console.log(`🌐 Crawling: ${START_URL}`);
+
+const MAX_PAGES = args.max-pages || 500;
 
 const EXCLUDED_PATHS = ['/sites/default/files'];
 

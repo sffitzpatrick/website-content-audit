@@ -1,0 +1,68 @@
+name: Library Content Audit
+
+on:
+  workflow_dispatch:  # Manual run
+    inputs:
+        site_url:
+            description: "Website URL to crawl"
+            required: true
+            default: "https://www.yourlibrary.org"
+        max_pages:
+            description: "Maximum number of pages to crawl"
+            required: false
+            default: 1000
+  schedule:
+    - cron: "0 3 1 * *"  # 3am UTC on the 1st of every month
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    env:
+      DEFAULT_SITE_URL: "https://www.yourlibrary.org"
+      DEFAULT_MAX_PAGES: 1000
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Recreate GA4 service account file
+        run: |
+          echo '${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}' > ga4-service-account.json
+
+      - name: Set Site URL
+        id: site
+        run: |
+          if [ -z "${{ github.event.inputs.site_url }}" ]; then
+            echo "url=${DEFAULT_SITE_URL}" >> $GITHUB_OUTPUT
+          else
+            echo "url=${{ github.event.inputs.site_url }}" >> $GITHUB_OUTPUT
+          fi
+          if [ -z "${{ github.event.inputs.max_pages }}" ]; then
+            echo "max_pages=${DEFAULT_MAX_PAGES}" >> $GITHUB_OUTPUT
+          else
+            echo "max_pages=${{ github.event.inputs.max_pages }}" >> $GITHUB_OUTPUT
+          fi
+
+
+      - name: Run crawler
+        run: node crawler.js --url="${{ steps.site.outputs.url }}" --max-pages="${{ steps.site.outputs.max_pages }}"
+
+      - name: Run scorer
+        run: node scorer.js
+
+      - name: Commit updated CSV results
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add *.csv
+          git commit -m "Monthly content audit update" || echo "No changes to commit"
+          git push
