@@ -16,7 +16,7 @@ if (!START_URL) {
 
 console.log(`🌐 Crawling: ${START_URL}`);
 
-const MAX_PAGES = args.max-pages || 500;
+const MAX_PAGES = args['max-pages'] || 500;
 
 const EXCLUDED_PATHS = ['/sites/default/files'];
 
